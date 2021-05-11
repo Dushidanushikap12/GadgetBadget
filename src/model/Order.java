@@ -24,36 +24,41 @@ public class Order
 	 String output = "";
 	 try
 	 {
-	 Connection con = connect();
-	 if (con == null)
-	 {return "Error while connecting to the database for inserting."; }
-	 // create a prepared statement
-	 //String query = "insert into orderpage.order (orderid,'NamewithInitials','NICNo','Email','Address1','Address2','City','Province','MobileNo','Price')" + " values (?, ?, ?, ?, ?,?, ?, ?, ?, ?)";
-	 String query = "insert into orderpage.order (orderid,NamewithInitials,NICNo,Email,Address1,Address2,City,Province,MobileNo,Price)" + " values (?, ?, ?, ?, ?,?, ?, ?, ?, ?)";
-
-	 PreparedStatement preparedStmt = con.prepareStatement(query);
-	 // binding values
-	 preparedStmt.setString(1, id);
-	 preparedStmt.setString(2, namewithinitials);
-	 preparedStmt.setString(3, nicno);
-	 preparedStmt.setString(4,email);
-	 preparedStmt.setString(5,address1 );
-	 preparedStmt.setString(6,address2 );
-	 preparedStmt.setString(7,city );
-	 preparedStmt.setString(8,province );
-	 preparedStmt.setString(9,mobileno );
-	 preparedStmt.setString(10,price);
-	 
-	// execute the statement
-	
-	 preparedStmt.execute();
-	 con.close();
-	 output = "Inserted successfully";
+			 Connection con = connect();
+			 if (con == null)
+			 {return "Error while connecting to the database for inserting."; }
+			 // create a prepared statement
+			 //String query = "insert into orderpage.order (orderid,'NamewithInitials','NICNo','Email','Address1','Address2','City','Province','MobileNo','Price')" + " values (?, ?, ?, ?, ?,?, ?, ?, ?, ?)";
+			 String query = "insert into orderpage.order (orderid,NamewithInitials,NICNo,Email,Address1,Address2,City,Province,MobileNo,Price)" + " values (?, ?, ?, ?, ?,?, ?, ?, ?, ?)";
+		
+			 PreparedStatement preparedStmt = con.prepareStatement(query);
+			 // binding values
+			 preparedStmt.setString(1, id);
+			 preparedStmt.setString(2, namewithinitials);
+			 preparedStmt.setString(3, nicno);
+			 preparedStmt.setString(4,email);
+			 preparedStmt.setString(5,address1 );
+			 preparedStmt.setString(6,address2 );
+			 preparedStmt.setString(7,city );
+			 preparedStmt.setString(8,province );
+			 preparedStmt.setString(9,mobileno );
+			 preparedStmt.setString(10,price);
+			 
+			// execute the statement
+			
+			 preparedStmt.execute();
+			 con.close();
+			 //output = "Inserted successfully";
+			 
+			 String newItems = readOrder();
+			 output = "{\"status\":\"success\", \"data\": \"" +
+			 newItems + "\"}"; 
 	 }
 	 catch (Exception e)
 	 {
-	 output = e.getMessage();
-	 System.err.println(e.getMessage());
+		 output = "{\"status\":\"error\", \"data\": \"Error while inserting the item.\"}";
+		 
+		 System.err.println(e.getMessage());
 	 }
 	 return output;
 	 } 
@@ -67,6 +72,7 @@ public class Order
 	 if (con == null)
 	 {return "Error while connecting to the database for reading."; }
 	 // Prepare the html table to be displayed
+	 
 	 output = "<table border='1'><tr><th>Order ID</th><th>Name with Initials</th>" 
 	 + "<th> NIC </th>"
      + "<th> Email </th>"
@@ -75,8 +81,8 @@ public class Order
      + "<th> City </th>"
      + "<th> Province </th>"
      + "<th> Mobile No </th>"
-	 + "<th> Price </th>" +
-	 "<th>Update</th><th>Remove</th></tr>";
+	 + "<th> Price </th>"
+     +"<th>Update</th><th>Remove</th></tr>";
 
 	 String query = "select * from orderpage.order";
 	 Statement stmt = con.createStatement();
@@ -112,9 +118,10 @@ public class Order
 	 output += "<td>" + Price + "</td>";
 	 
 	 // buttons
-	 output += "<td><input name='btnUpdate' type='button' value='Update' class='btn btn-secondary'></td>"
-	 + "<td><form method='post' action='order.jsp'>"+ "<input name='btnRemove' type='submit' value='Remove'class='btn btn-danger'>" 
-	 + "<input name='orderid' type='hidden' value='" + orderId+ "'>" + "</form></td></tr>";
+	 output += "<td><input name='btnUpdate' type='button' value='Update'"
+	 +" class='btnUpdate btn btn-secondary' data-itemid='" + orderId + "'></td>"
+	 + "<td><input name='btnRemove' type='button' value='Remove'"
+	 +"class='btnRemove btn btn-danger' data-itemid='" + orderId + "'> </td></tr>";
 	 }
 	 con.close();
 	 // Complete the html table
@@ -143,8 +150,8 @@ public class Order
 		 PreparedStatement preparedStmt = con.prepareStatement(query);
 		 // binding values
 		 //preparedStmt.setString(1, id);
-		 preparedStmt.setString(1, namewithinitials);
-		 preparedStmt.setString(2, nicno);
+		 preparedStmt.setString(1,namewithinitials);
+		 preparedStmt.setString(2,nicno);
 		 preparedStmt.setString(3,email);
 		 preparedStmt.setString(4,address1 );
 		 preparedStmt.setString(5,address2 );
@@ -157,12 +164,16 @@ public class Order
 		 // execute the statement
 		 preparedStmt.execute();
 		 con.close();
-		 output = "Updated successfully";
+		 String newItems = readOrder();
+		 output = "{\"status\":\"success\", \"data\": \"" +
+		 newItems + "\"}";
 		 }
 		 catch (Exception e)
 		 {
-		 output = "Error while updating the item.";
-		 System.err.println(e.getMessage());
+		 //output = "Error while updating the item.";
+			 output = "{\"status\":\"error\", \"data\":\"Error while updating the item.\"}"; 
+			 System.err.println(e.getMessage());
+			 
 		 }
 		 return output;
 		 } 
@@ -189,14 +200,18 @@ public class Order
 	 // execute the statement
 	 preparedStmt.execute();
 	 con.close();
-	 output = "Deleted successfully";
+	 //output = "Deleted successfully";
 	 
+	 String newItems = readOrder();
+	 
+	 output = "{\"status\":\"success\", \"data\": \"" +
+		 newItems + "\"}";
 	 }
 	
 	 catch (Exception e)
 	 {
-		 
-	 output = "Error while deleting the order.";
+		 output = "{\"status\":\"error\", \"data\":\"Error while deleting the item.\"}";
+	 //output = "Error while deleting the order.";
 	 System.err.println(e.getMessage());
 	 
 	 }
